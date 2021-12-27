@@ -16,7 +16,6 @@ namespace TesteWebApp.Controllers
     {
         private readonly UserManager<ApplicationUser> userManager;
         private readonly SignInManager<ApplicationUser> signInManager;
-
         public AccountController(UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager)
         {
@@ -35,24 +34,14 @@ namespace TesteWebApp.Controllers
         {
             if (ModelState.IsValid)
             {
-                // Copia os dados do RegisterViewModel para o IdentityUser
                 var user = new ApplicationUser
                 {
                     UserName = model.Email,
                     Email = model.Email
                 };
-
-                // Armazena os dados do usuário na tabela AspNetUsers
                 var result = await userManager.CreateAsync(user, model.Password);
-
-                // Se o usuário foi criado com sucesso, faz o login do usuário
-                // usando o serviço SignInManager e redireciona para o Método Action Index
                 if (result.Succeeded)
                 {
-                    // Se o usuário estiver logado e for do perfil Admin
-                    // então o usuário é o usuário Admin que esta criando
-                    // um novo usuário, assim vamos direcioná-lo para o
-                    // usuário Admin para a Action ListRoles
                     if (signInManager.IsSignedIn(User) && User.IsInRole("Admin"))
                     {
                         return RedirectToAction("ListUsers", "Administration");
@@ -60,9 +49,6 @@ namespace TesteWebApp.Controllers
                     await signInManager.SignInAsync(user, isPersistent: false);
                     return RedirectToAction("index", "home");
                 }
-
-                // Se houver erros então inclui no ModelState
-                // que será exibido pela tag helper summary na validação
                 foreach (var error in result.Errors)
                 {
                     ModelState.AddModelError(string.Empty, error.Description);
@@ -91,15 +77,12 @@ namespace TesteWebApp.Controllers
             {
                 var result = await signInManager.PasswordSignInAsync(
                     model.Email, model.Password, model.RememberMe, false);
-
                 if (result.Succeeded)
                 {
                     return RedirectToAction("index", "home");
                 }
-
                 ModelState.AddModelError(string.Empty, "Login Inválido");
             }
-
             return View(model);
         }
 
@@ -108,7 +91,6 @@ namespace TesteWebApp.Controllers
         public async Task<IActionResult> IsEmailInUse(string email)
         {
             var user = await userManager.FindByEmailAsync(email);
-
             if (user == null)
             {
                 return Json(true);
@@ -137,14 +119,11 @@ namespace TesteWebApp.Controllers
                 {
                     var token = await userManager.GeneratePasswordResetTokenAsync(user);
                     var values = new { email = user.Email, token = token };
-
                     EnviarEmailResetPassword(user.Email, user.UserName, values);
-
                     return View("ForgotPasswordConfirmation");
                 }
                 return View("ForgotPasswordConfirmation");
             }
-
             return View(model);
         }
 
@@ -170,7 +149,6 @@ namespace TesteWebApp.Controllers
                 string assunto = "Alteração de Senha";
                 string urlChange = Url.Action("ResetPassword", "Account", values, Request.Scheme);
                 string texto = $"Abra o Link \r\n\r\n{urlChange}";
-
                 EnviarEmail(fromName, fromEmail, toName, toEmail, assunto, texto);
                 return true;
             }
@@ -186,7 +164,6 @@ namespace TesteWebApp.Controllers
             int smtpPort = 587;
             string smtpUsername = "vkulessatestes@gmail.com";
             string smtpPassword = "Jlqp@4464";
-
             MimeMessage message = new();
             message.From.Add(new MailboxAddress(fromName, fromEmail));
             message.To.Add(new MailboxAddress(toName, toEmail));
@@ -200,51 +177,42 @@ namespace TesteWebApp.Controllers
             client.Authenticate(smtpUsername, smtpPassword);
             client.Send(message);
             client.Disconnect(true);
-
         }
+
         [HttpGet]
         [AllowAnonymous]
         public IActionResult ResetPassword(string token, string email)
         {
-            // If password reset token or email is null, most likely the
-            // user tried to tamper the password reset link
             if (token == null || email == null)
             {
                 ModelState.AddModelError("", "Invalid password reset token");
             }
             return View();
         }
+
         [HttpPost]
         [AllowAnonymous]
         public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
         {
             if (ModelState.IsValid)
             {
-                // Find the user by email
                 var user = await userManager.FindByEmailAsync(model.Email);
 
                 if (user != null)
                 {
-                    // reset the user password
                     var result = await userManager.ResetPasswordAsync(user, model.Token, model.Password);
                     if (result.Succeeded)
                     {
                         return View("ResetPasswordConfirmation");
                     }
-                    // Display validation errors. For example, password reset token already
-                    // used to change the password or password complexity rules not met
                     foreach (var error in result.Errors)
                     {
                         ModelState.AddModelError("", error.Description);
                     }
                     return View(model);
                 }
-
-                // To avoid account enumeration and brute force attacks, don't
-                // reveal that the user does not exist
                 return View("ResetPasswordConfirmation");
             }
-            // Display validation errors if model state is not valid
             return View(model);
         }
     }
