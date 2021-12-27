@@ -1,0 +1,66 @@
+﻿@using Microsoft.AspNetCore.Identity
+@model IEnumerable<IdentityRole>
+
+@{
+    ViewBag.Title = "Todas as Roles";
+}
+
+<h1>Roles</h1>
+
+@if (Model.Any())
+{
+    <a class="btn btn-primary mb-3" style="width:auto" asp-action="CreateRole"
+       asp-controller="administration">Nova Role</a>
+
+    foreach (var role in Model)
+    {
+        <div class="card mb-3">
+            <div class="card-header">
+                ID : @role.Id
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">@role.Name</h5>
+            </div>
+            <div class="card-footer">
+                <form asp-action="DeleteRole" asp-route-id="@role.Id" method="post">
+
+                    <a asp-action="EditRole" asp-controler="Administration"
+                       asp-route-id="@role.Id" class="btn btn-primary">Editar</a>
+
+                    <span id="confirmaDeleteSpan_@role.Id" style="display:none">
+                        <span>Deseja deletar esta role ?</span>
+                        <button type="submit" class="btn btn-danger">Sim</button>
+                        <a href="#" class="btn btn-primary"
+                           onclick="confirmaDelete('@role.Id', false)">Não</a>
+                    </span>
+
+                    <span id="deleteSpan_@role.Id">
+                        <a href="#" class="btn btn-danger"
+                           onclick="confirmaDelete('@role.Id', true)">Deletar</a>
+                    </span>
+                </form>
+            </div>
+        </div>
+    }
+}
+else
+{
+    <div class="card">
+        <div class="card-header">
+            Não existem roles
+        </div>
+        <div class="card-body">
+            <h5 class="card-title">
+                Use o botão abaixo para criar uma role
+            </h5>
+            <a class="btn btn-primary" style="width:auto"
+               asp-controller="administration" asp-action="CreateRole">
+                Criar Role
+            </a>
+        </div>
+    </div>
+}
+@section Scripts {
+    <script src="~/js/CustomScript.js"></script>
+}
+
